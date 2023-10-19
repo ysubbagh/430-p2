@@ -17,4 +17,4 @@ void deleteSudokuPuzzle(int psize, int **grid);
 int main(int argc, char **argv);
 
 
-#endif SUDOKU_H
+#endif 
