@@ -1,3 +1,6 @@
+use gdb for testing
+https://www.youtube.com/watch?v=bWH-nL7v5F4
+
 # Sudoku verifier and solver
 
 Works on sudoku puzzles of any size.
