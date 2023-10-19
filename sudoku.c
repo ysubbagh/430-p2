@@ -10,10 +10,26 @@
 // If complete, a puzzle is valid if all rows/columns/boxes have numbers from 1
 // to psize For incomplete puzzles, we cannot say anything about validity
 void checkPuzzle(int psize, int **grid, bool *complete, bool *valid) {
-  // YOUR CODE GOES HERE and in HELPER FUNCTIONS
+  //thread id
+  pthread_t tID;
+  //create attributes
+  pthread_attr_t attr;
+  pthread_attr_init(&attr);
+  pthread_create(&tID, &attr, checkBox, NULL);
+
+
+
   *valid = true;
   *complete = true;
 }
+
+void* checkBox(){ pthread_exit(0);}
+
+//define the variables / structure for the parameters passed to the threads
+struct params {
+  int row;
+  int column;
+};
 
 // takes filename and pointer to grid[][]
 // returns size of Sudoku puzzle and fills grid
