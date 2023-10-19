@@ -1,10 +1,6 @@
 // Sudoku puzzle verifier and solver
 
-#include <assert.h>
-#include <pthread.h>
-#include <stdbool.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include "sudoku.h"
 
 // takes puzzle size and grid[][] representing sudoku puzzle
 // and tow booleans to be assigned: complete and valid.
