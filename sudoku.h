@@ -8,13 +8,11 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-
-//structure for passing data to threads
-typedef struct params;
+#include <string.h>
 
 //functions
 void checkPuzzle(int psize, int **grid, bool *complete, bool *valid);
-int checkRows();
+void checkRows(int tnum, int psize, struct Params* param, int **grid);
 int checkColumns();
 int checkBox();
 int readSudokuPuzzle(char *filename, int ***grid);
