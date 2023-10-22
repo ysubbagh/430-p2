@@ -1,5 +1,4 @@
 // Sudoku puzzle verifier and solver
-
 #include <assert.h>
 #include <pthread.h>
 #include <stdbool.h>
@@ -73,13 +72,15 @@ void* checkCol(struct Params *param){
 }
 
 void* checkBox(struct Params *param){
+  printf("check tnum: %d\n", param -> tnum);
   int valid = 1;
   bool stop = false;
   int inc = (int)sqrt((double)param -> size);
   int* vals = (int*)calloc(param -> size, sizeof(int));
-  for(int i = param -> row; i < inc; i++){
-    for(int j = param -> column; j < inc; j++){
+  for(int i = param -> row; i <= inc; i++){
+    for(int j = param -> column; j <= inc; j++){
       int cellNum = param -> agrid[i][j];
+      printf("vals = %d, cell = %d\n", vals[cellNum], cellNum);
       if(cellNum == 0){
         valid = -1;
         stop = true;
@@ -98,7 +99,6 @@ void* checkBox(struct Params *param){
   boxResults[param -> tnum] = valid;
   pthread_mutex_unlock(&arrayMutex);
   free(vals);
-  printf("currently in thread: %d\n", param -> tnum);
   pthread_exit(NULL);
 }
 
@@ -154,18 +154,17 @@ void checkPuzzle(int psize, int **grid, bool *complete, bool *valid) {
       boxParams -> row = i;
       boxParams -> column = j;
       boxParams -> tnum = counter;
-      printf("thread created: %d\n", boxParams -> tnum);
+      //printf("thread created: %d\n", boxParams -> tnum);
       pthread_create(&boxThreads[boxParams -> tnum], &attr, checkBox, boxParams);
       counter++;
       pthread_join(boxThreads[boxParams -> tnum], NULL);
-      printf("threads destroyed %d\n", i);
+      //printf("threads destroyed %d\n", i);
     }
   }
   //move boxresults into main results array
   for(int i = 2; i < psize; i++){
     result[i] = boxResults[i - 2];
   }
-
 
   //base cases for results
   *valid = true;
@@ -178,9 +177,10 @@ void checkPuzzle(int psize, int **grid, bool *complete, bool *valid) {
       break;
     }
     if(result[i] == 0){ //at least one on the threads was not valid
-      printf("false in: %d\n", i);
+      //printf("false in: %d\n", i);
       *valid = false;
     }
+    printf("result[%d]= %d\n", i, result[i]);
   }
   if(!*complete){*valid = false;} //valid cannot be true if complete is false
 
