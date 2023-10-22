@@ -1,0 +1,16 @@
+For a 9x9 complete puzzle
+- Can verify whether it is valid or not - 10
+    Yes
+- Starts/joins multiple threads to speedup operation - 5
+    Yes, threads created to check rows, columns, and each subsquare
+For NxN complete puzzle
+- Can verify whether it is valid or not - 5
+    Yes
+- The number of threads is proportional to N - 5
+    Yes, uses O(2+N) = O(N)
+Bonus: Can complete puzzles using multiple threads and verify their validity - 2 (only working on puzzles that need one row, column, box with a zero filled art a time)
+    Cannot complete puzzles.
+Bonus: Can complete difficult puzzles, such as the one below. You may need a special thread or a different mechanism to do deeper analysis on the puzzle. - 3
+    Cannot complete puzzles. 
+
+Score: 25/25

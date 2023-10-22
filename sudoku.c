@@ -157,6 +157,7 @@ void checkPuzzle(int psize, int **grid, bool *complete, bool *valid) {
       counter++;
     }
   }
+
   //move boxresults into main results array
   for(int i = 2; i < psize + 2; i++){
     result[i] = boxResults[i - 2];
@@ -165,17 +166,13 @@ void checkPuzzle(int psize, int **grid, bool *complete, bool *valid) {
   //base cases for results
   *valid = true;
   *complete = true;
-  
   //check the results from the threads
   for(int i = 0; i < 2+psize; i++){
     if(result[i] == -1){ //a 0 was found, not complete, no need to check for valid
       *complete = false;
       break;
     }
-    if(result[i] == 0){ //at least one on the threads was not valid
-      //printf("false in: %d\n", i);
-      *valid = false;
-    }
+    if(result[i] == 0){*valid = false;}//at least one on the threads was not valid
   }
   if(!*complete){*valid = false;} //valid cannot be true if complete is false
 
