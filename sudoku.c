@@ -6,14 +6,66 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-int **regions;
+#include <stdint.h>
 
 //define the variables / structure for the parameters passed to the threads
 typedef struct Params{
   int row;
   int column;
+  int size;
+  int **agrid;
 }Params;
+
+//checks every row for the correct values
+void* checkRows(struct Params *param){
+  printf("size: %d\n", param -> size);
+  int valid = 1;
+  bool stop = false;
+  //traverse through the grid
+  for(int i = 1; i <= param -> size; i++){ //traverse through the rows
+    int* vals = (int*)calloc(param -> size, sizeof(int));
+    for(int j = 1; j <= param -> size; j++){ //traverse through the columns
+      int cellNum = param -> agrid[i][j];
+      if(cellNum == 0){
+        valid = -1;
+        stop = true;
+      }else if(vals[cellNum] != 0){
+        valid = 0;
+        stop = true;
+      }else{
+        vals[cellNum] = j;
+      }
+    }
+    free(vals);
+    if(stop){break;}
+  }
+  return (void*)(uintptr_t)valid;
+}
+
+//checks every column for the correct values
+void* checkCol(struct Params *param){
+  int valid = 1;
+  bool stop = false;
+  //traverse through the grid
+  for(int i = 1; i <= param -> size; i++){ //traverse through the rows
+    int* vals = (int*)calloc(param -> size, sizeof(int));
+    for(int j = 1; j <= param -> size; j++){ //traverse through the columns
+      int cellNum = param -> agrid[j][i];
+      if(cellNum == 0){
+        valid = -1;
+        stop = true;
+      }else if(vals[cellNum] != 0){
+        valid = 0;
+        stop = true;
+      }else{
+        vals[cellNum] = i;
+      }
+    }
+    free(vals);
+    if(stop){break;}
+  }
+  return (void*)(uintptr_t)valid;
+}
 
 // takes puzzle size and grid[][] representing sudoku puzzle
 // and tow booleans to be assigned: complete and valid.
@@ -23,66 +75,63 @@ typedef struct Params{
 // If complete, a puzzle is valid if all rows/columns/boxes have numbers from 1
 // to psize For incomplete puzzles, we cannot say anything about validity
 void checkPuzzle(int psize, int **grid, bool *complete, bool *valid) {
-  //creare threads
-  int THREAD_COUNT = psize * 3;
-  regions = (int*)malloc(THREAD_COUNT * sizeof(int));
-  pthread_t threads[THREAD_COUNT];
+  int result[2+psize];
+  //initalize threads
+  pthread_t rowThread;
+  pthread_t colThread;
+  pthread_t boxThread;
   //create attributes for threads
   pthread_attr_t attr;
   pthread_attr_init(&attr);
 
-  //pthread_create(&threads, &attr, checkBox, NULL);
-  //create params for row checkers
-  Params *rowParam = (Params*)malloc(sizeof(Params));
-  rowParam -> row = 0;
-  rowParam -> column = 0;
+  //create params//
+  //row
+  Params *rowParams = (Params*)malloc(sizeof(Params));
+  rowParams -> size = psize;
+  rowParams -> agrid = grid;
+  //column
+  Params *colParams = (Params*)malloc(sizeof(Params));
+  colParams -> size = psize;
+  colParams -> agrid = grid;
 
-  for(int i = 0; i < THREAD_COUNT; i++){
-    if(i < psize) { //check rows
-      rowParam -> column = 0;
-      rowParam -> row++;
-    }else if (i > psize * 2){ //check columns
+  /*CREATE THREADS*/
+  //rows
+  pthread_create(&rowThread, &attr, checkRows, rowParams);
+  void* funResult;
+  pthread_join(rowThread, &funResult);
+  result[0] = (int)(uintptr_t)funResult;
+  //columns
+  pthread_create(&colThread, &attr, checkCol, colParams);
+  void* colResult;
+  pthread_join(colThread, &funResult);
+  result[1] = (int)(uintptr_t)funResult;
 
-    }else{ //check boxes
-
-    }
-  }
-
-  //clear memory
-  free(rowParam);
-
-  //check the array that all were valid
+  //base cases for results
   *valid = true;
-  for(int i = 0; i < THREAD_COUNT; i++){
-    if(regions[i] != 1){ // a region was not valid
-      *valid = false;
-      break;
-    }
-  }
   *complete = true;
-  free(regions);
-}
-
-void checkRows(int tnum, int psize, struct Params *param, int **grid){
-  int valid = 1;
-  //build array to check for validity in the row
-  int* validityArr = (int*)malloc(psize * sizeof(int));
-  memset(validityArr, 0, psize *sizeof(int));
-  //traverse through the row
-  for(int i = 0; i < psize; i++){
-    int value = grid[param -> row][param -> column];
-    if(validityArr[value] != 0){//number was already found in that row
-      valid = 0;
+  /*
+  //check the results from the threads
+  for(int i = 0; i < 2+psize; i++){
+    if(result[i] == -1){ //a 0 was found, not complete, no need to check for valid
+      *complete = false;
       break;
-    }else{
-      validityArr[value] = 1;
     }
-    param -> column++;
+    if(result[i] == 0){ //at least one on the threads was not valid
+      *valid = false;
+    }
   }
-  regions[tnum] = valid;
-  free(validityArr);
-}
+  if(!*complete){*valid = false;} //valid cannot be true if complete is false
+  */
+  if(result[0] != 1 && result[1] != 1){
+    *valid = false;
+  }
 
+
+  //free pointers
+  free(rowParams);
+  free(colParams);
+  pthread_attr_destroy(&attr);
+}
 
 // takes filename and pointer to grid[][]
 // returns size of Sudoku puzzle and fills grid
