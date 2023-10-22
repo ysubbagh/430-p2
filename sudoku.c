@@ -7,6 +7,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include <math.h>
+
+//vairable to store the validity of the boxes within
+int *boxResults = NULL;
+pthread_mutex_t arrayMutex; //prevent write/read issues with threads running in parallel
 
 //define the variables / structure for the parameters passed to the threads
 typedef struct Params{
@@ -14,6 +19,7 @@ typedef struct Params{
   int column;
   int size;
   int **agrid;
+  int tnum;
 }Params;
 
 //checks every row for the correct values
@@ -67,6 +73,31 @@ void* checkCol(struct Params *param){
   return (void*)(uintptr_t)valid;
 }
 
+void* checkBox(struct Params *param){
+  int valid = 1;
+  bool stop = false;
+  int inc = (int)sqrt((double)param -> size);
+  int* vals = (int*)calloc(param -> size, sizeof(int));
+  for(int i = param -> row; i < inc; i++){
+    for(int j = param -> column; j < inc; j++){
+      int cellNum = param -> agrid[i][j];
+      if(cellNum == 0){
+        valid = -1;
+        stop = true;
+      }else if(vals[cellNum] != 0){
+        valid = 0;
+        stop = true;
+      }else{
+        vals[cellNum] = cellNum;
+      }
+      if(stop){break;}
+    }  
+    if(stop){break;}
+  }
+  free(vals);
+  boxResults[param -> tnum] = valid;
+}
+
 // takes puzzle size and grid[][] representing sudoku puzzle
 // and tow booleans to be assigned: complete and valid.
 // row-0 and column-0 is ignored for convenience, so a 9x9 puzzle
@@ -79,12 +110,11 @@ void checkPuzzle(int psize, int **grid, bool *complete, bool *valid) {
   //initalize threads
   pthread_t rowThread;
   pthread_t colThread;
-  pthread_t boxThread;
   //create attributes for threads
   pthread_attr_t attr;
   pthread_attr_init(&attr);
 
-  //create params//
+  //create params for row and columns//
   //row
   Params *rowParams = (Params*)malloc(sizeof(Params));
   rowParams -> size = psize;
@@ -102,14 +132,42 @@ void checkPuzzle(int psize, int **grid, bool *complete, bool *valid) {
   result[0] = (int)(uintptr_t)funResult;
   //columns
   pthread_create(&colThread, &attr, checkCol, colParams);
-  void* colResult;
   pthread_join(colThread, &funResult);
   result[1] = (int)(uintptr_t)funResult;
+
+  //handle the subgrids
+  int inc = (int)sqrt((double)psize); //value to increment by, square root of N
+  boxResults = (int*)malloc(psize * sizeof(int));
+  Params *boxParams = (Params*)malloc(sizeof(Params));
+  pthread_t boxThreads[psize];
+
+  //check the sub boxes
+  for(int i = 1; i < inc; i++){
+    for(int j = 1; j < inc; j++){
+      boxParams -> size = psize;
+      boxParams -> agrid = grid;
+      boxParams -> row = i;
+      boxParams -> column = j;
+      boxParams -> tnum = (i - 1) * psize + (j - 1);
+      
+      pthread_create(&boxThreads[boxParams -> tnum], &attr, checkBox, boxParams);
+    }
+  }
+  //wait for all teh threeads to finsh
+  for(int i = 0; i < psize; i++){
+    pthread_join(boxThreads[i], NULL);
+    free(boxParams);
+  }
+  //move boxresults into main results array
+  for(int i = 2; i < psize; i++){
+    result[i] = boxResults[i - 2];
+  }
+
 
   //base cases for results
   *valid = true;
   *complete = true;
-  /*
+  
   //check the results from the threads
   for(int i = 0; i < 2+psize; i++){
     if(result[i] == -1){ //a 0 was found, not complete, no need to check for valid
@@ -121,16 +179,14 @@ void checkPuzzle(int psize, int **grid, bool *complete, bool *valid) {
     }
   }
   if(!*complete){*valid = false;} //valid cannot be true if complete is false
-  */
-  if(result[0] != 1 && result[1] != 1){
-    *valid = false;
-  }
-
 
   //free pointers
   free(rowParams);
   free(colParams);
+  free(boxParams);
+  free(boxResults);
   pthread_attr_destroy(&attr);
+  pthread_mutex_destroy(&arrayMutex);
 }
 
 // takes filename and pointer to grid[][]
