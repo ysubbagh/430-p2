@@ -24,7 +24,6 @@ typedef struct Params{
 
 //checks every row for the correct values
 void* checkRows(struct Params *param){
-  printf("size: %d\n", param -> size);
   int valid = 1;
   bool stop = false;
   //traverse through the grid
@@ -94,8 +93,13 @@ void* checkBox(struct Params *param){
     }  
     if(stop){break;}
   }
-  free(vals);
+  //prevent read/write issues
+  pthread_mutex_lock(&arrayMutex);
   boxResults[param -> tnum] = valid;
+  pthread_mutex_unlock(&arrayMutex);
+  free(vals);
+  printf("currently in thread: %d\n", param -> tnum);
+  pthread_exit(NULL);
 }
 
 // takes puzzle size and grid[][] representing sudoku puzzle
@@ -142,21 +146,20 @@ void checkPuzzle(int psize, int **grid, bool *complete, bool *valid) {
   pthread_t boxThreads[psize];
 
   //check the sub boxes
-  for(int i = 1; i < inc; i++){
-    for(int j = 1; j < inc; j++){
+  int counter = 0;
+  for(int i = 1; i <= inc; i++){
+    for(int j = 1; j <= inc; j++){
       boxParams -> size = psize;
       boxParams -> agrid = grid;
       boxParams -> row = i;
       boxParams -> column = j;
-      boxParams -> tnum = (i - 1) * psize + (j - 1);
-      
+      boxParams -> tnum = counter;
+      printf("thread created: %d\n", boxParams -> tnum);
       pthread_create(&boxThreads[boxParams -> tnum], &attr, checkBox, boxParams);
+      counter++;
+      pthread_join(boxThreads[boxParams -> tnum], NULL);
+      printf("threads destroyed %d\n", i);
     }
-  }
-  //wait for all teh threeads to finsh
-  for(int i = 0; i < psize; i++){
-    pthread_join(boxThreads[i], NULL);
-    free(boxParams);
   }
   //move boxresults into main results array
   for(int i = 2; i < psize; i++){
@@ -175,6 +178,7 @@ void checkPuzzle(int psize, int **grid, bool *complete, bool *valid) {
       break;
     }
     if(result[i] == 0){ //at least one on the threads was not valid
+      printf("false in: %d\n", i);
       *valid = false;
     }
   }

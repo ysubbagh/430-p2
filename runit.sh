@@ -6,7 +6,7 @@ gcc -Wall -Wextra -pthread -lm -std=c99 sudoku.c -o sudoku
 ./sudoku puzzle2-valid.txt
 
 # to check for memory leaks, use
- valgrind ./sudoku puzzle2-valid.txt
+ #valgrind ./sudoku puzzle2-valid.txt
 
 # to fix formating use
 # clang-format -i main.c
