@@ -77,10 +77,10 @@ void* checkBox(struct Params *param){
   bool stop = false;
   int inc = (int)sqrt((double)param -> size);
   int* vals = (int*)calloc(param -> size, sizeof(int));
-  for(int i = param -> row; i <= inc; i++){
-    for(int j = param -> column; j <= inc; j++){
+  for(int i = param -> row; i < param -> row + inc; i++){
+    for(int j = param -> column; j < param -> column + inc; j++){
       int cellNum = param -> agrid[i][j];
-      printf("vals = %d, cell = %d\n", vals[cellNum], cellNum);
+      printf("row: %d col: %d , vals = %d, cell = %d\n", i, j, vals[cellNum], cellNum);
       if(cellNum == 0){
         valid = -1;
         stop = true;
@@ -143,22 +143,20 @@ void checkPuzzle(int psize, int **grid, bool *complete, bool *valid) {
   int inc = (int)sqrt((double)psize); //value to increment by, square root of N
   boxResults = (int*)malloc(psize * sizeof(int));
   Params *boxParams = (Params*)malloc(sizeof(Params));
+  boxParams -> size = psize;
+  boxParams -> agrid = grid;
   pthread_t boxThreads[psize];
 
   //check the sub boxes
   int counter = 0;
-  for(int i = 1; i <= inc; i++){
-    for(int j = 1; j <= inc; j++){
-      boxParams -> size = psize;
-      boxParams -> agrid = grid;
+  for(int i = 1; i <= psize; i+= inc){
+    for(int j = 1; j <= psize; j+= inc){
       boxParams -> row = i;
       boxParams -> column = j;
       boxParams -> tnum = counter;
-      //printf("thread created: %d\n", boxParams -> tnum);
       pthread_create(&boxThreads[boxParams -> tnum], &attr, checkBox, boxParams);
-      counter++;
       pthread_join(boxThreads[boxParams -> tnum], NULL);
-      //printf("threads destroyed %d\n", i);
+      counter++;
     }
   }
   //move boxresults into main results array
