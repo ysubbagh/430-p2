@@ -72,7 +72,6 @@ void* checkCol(struct Params *param){
 }
 
 void* checkBox(struct Params *param){
-  printf("check tnum: %d\n", param -> tnum);
   int valid = 1;
   bool stop = false;
   int inc = (int)sqrt((double)param -> size);
@@ -80,7 +79,6 @@ void* checkBox(struct Params *param){
   for(int i = param -> row; i < param -> row + inc; i++){
     for(int j = param -> column; j < param -> column + inc; j++){
       int cellNum = param -> agrid[i][j];
-      printf("row: %d col: %d , vals = %d, cell = %d\n", i, j, vals[cellNum], cellNum);
       if(cellNum == 0){
         valid = -1;
         stop = true;
@@ -160,7 +158,7 @@ void checkPuzzle(int psize, int **grid, bool *complete, bool *valid) {
     }
   }
   //move boxresults into main results array
-  for(int i = 2; i < psize; i++){
+  for(int i = 2; i < psize + 2; i++){
     result[i] = boxResults[i - 2];
   }
 
@@ -178,7 +176,6 @@ void checkPuzzle(int psize, int **grid, bool *complete, bool *valid) {
       //printf("false in: %d\n", i);
       *valid = false;
     }
-    printf("result[%d]= %d\n", i, result[i]);
   }
   if(!*complete){*valid = false;} //valid cannot be true if complete is false
 
