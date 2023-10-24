@@ -153,9 +153,12 @@ void checkPuzzle(int psize, int **grid, bool *complete, bool *valid) {
       boxParams -> column = j;
       boxParams -> tnum = counter;
       pthread_create(&boxThreads[boxParams -> tnum], &attr, checkBox, boxParams);
-      pthread_join(boxThreads[boxParams -> tnum], NULL);
+      //pthread_join(boxThreads[boxParams -> tnum], NULL);
       counter++;
     }
+  }
+  for(counter = 0; counter < psize; counter++){
+    pthread_join(boxThreads[counter], NULL);
   }
 
   //move boxresults into main results array
